@@ -3,6 +3,8 @@
 
 #include "GAS_GameplayAbility.h"
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 UGAS_GameplayAbility::UGAS_GameplayAbility()
 {
 	AbilityInputID = EGAS_AbilityInputID::InputID_None;

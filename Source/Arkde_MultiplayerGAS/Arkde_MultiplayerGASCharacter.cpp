@@ -8,9 +8,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "AbilitySystemComponent.h"
+#include "GAS_AttributeSet.h"
+#include "GAS_GameplayAbility.h"
+#include "Arkde_MultiplayerGAS/Arkde_MultiplayerGAS.h"
 
-//////////////////////////////////////////////////////////////////////////
-// AArkde_MultiplayerGASCharacter
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 AArkde_MultiplayerGASCharacter::AArkde_MultiplayerGASCharacter()
 {
@@ -45,10 +48,53 @@ AArkde_MultiplayerGASCharacter::AArkde_MultiplayerGASCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AttributeSet = CreateDefaultSubobject<UGAS_AttributeSet>(TEXT("AttributeSet"));
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Input
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		for (TSubclassOf<UGAS_GameplayAbility>& CurrentAbilityClass : StartingAbilities)
+		{
+			if (!IsValid(CurrentAbilityClass))
+			{
+				continue;
+			}
+
+			UGAS_GameplayAbility* CurrentAbility = CurrentAbilityClass->GetDefaultObject<UGAS_GameplayAbility>();
+			if (!IsValid(CurrentAbility))
+			{
+				continue;
+			}
+
+			FGameplayAbilitySpec abilitySpec(CurrentAbility, 1, static_cast<int32>(CurrentAbility->AbilityInputID), this);
+			AbilitySystemComponent->GiveAbility(abilitySpec);
+		}
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->RefreshAbilityActorInfo();
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void AArkde_MultiplayerGASCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -74,23 +120,49 @@ void AArkde_MultiplayerGASCharacter::SetupPlayerInputComponent(class UInputCompo
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AArkde_MultiplayerGASCharacter::OnResetVR);
+
+	// Setup Ability System Component Input Bindings
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(
+		PlayerInputComponent,
+		FGameplayAbilityInputBinds(
+			"Confirm",
+			"Cancel",
+			"EGAS_AbilityInputID",
+			static_cast<int32>(EGAS_AbilityInputID::InputID_Confirm),
+			static_cast<int32>(EGAS_AbilityInputID::InputID_Cancel)
+		)
+	);
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+UAbilitySystemComponent* AArkde_MultiplayerGASCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void AArkde_MultiplayerGASCharacter::OnResetVR()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void AArkde_MultiplayerGASCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		Jump();
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void AArkde_MultiplayerGASCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		StopJumping();
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void AArkde_MultiplayerGASCharacter::TurnAtRate(float Rate)
 {
@@ -98,11 +170,15 @@ void AArkde_MultiplayerGASCharacter::TurnAtRate(float Rate)
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void AArkde_MultiplayerGASCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void AArkde_MultiplayerGASCharacter::MoveForward(float Value)
 {
@@ -117,6 +193,8 @@ void AArkde_MultiplayerGASCharacter::MoveForward(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void AArkde_MultiplayerGASCharacter::MoveRight(float Value)
 {

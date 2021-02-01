@@ -19,7 +19,7 @@ public:
 
 	UGAS_GameplayAbility();
 
-protected:
+public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay Ability")
 	EGAS_AbilityInputID AbilityInputID;

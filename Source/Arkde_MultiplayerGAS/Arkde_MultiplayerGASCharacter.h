@@ -4,10 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "Arkde_MultiplayerGASCharacter.generated.h"
 
+class UAbilitySystemComponent;
+class UGAS_AttributeSet;
+class UGAS_GameplayAbility;
+
 UCLASS(config=Game)
-class AArkde_MultiplayerGASCharacter : public ACharacter
+class AArkde_MultiplayerGASCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -20,6 +25,10 @@ class AArkde_MultiplayerGASCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 public:
 	AArkde_MultiplayerGASCharacter();
+
+	virtual void BeginPlay() override;
+
+	virtual void PossessedBy(AController* NewController) override;
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -68,5 +77,27 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	/* --- Gameplay Ability System Start --- */
+
+protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gameplay Ability System")
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gameplay Ability System")
+	UGAS_AttributeSet* AttributeSet;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Ability System")
+	TArray<TSubclassOf<UGAS_GameplayAbility>> StartingAbilities;
+
+public:
+
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Ability System")
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+	/* --- Gameplay Ability System End --- */
 };
 
