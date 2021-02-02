@@ -10,6 +10,7 @@
 class UAbilitySystemComponent;
 class UGAS_AttributeSet;
 class UGAS_GameplayAbility;
+class UGAS_GameplayEffect;
 
 UCLASS(config=Game)
 class AArkde_MultiplayerGASCharacter : public ACharacter, public IAbilitySystemInterface
@@ -78,6 +79,13 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	// To know if our inputs has been assigned. 
+	bool bIsInputBound;
+
+	bool bAbilitiesGiven;
+
+	bool bEffectsGiven;
+
 	/* --- Gameplay Ability System Start --- */
 
 protected:
@@ -93,6 +101,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Ability System")
 	TArray<TSubclassOf<UGAS_GameplayAbility>> StartingAbilities;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Ability System")
+	TArray<TSubclassOf<UGAS_GameplayEffect>> StartingEffects;
+
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Ability System")
@@ -100,6 +111,15 @@ public:
 
 	/* --- Gameplay Ability System End --- */
 
-	void Die();
+	void SetupGASInputs();
+
+	void SetupAbilities();
+
+	void SetupEffects();
+
+	virtual void Die();
+
+	virtual void OnRep_PlayerState() override;
+
 };
 

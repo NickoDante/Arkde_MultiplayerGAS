@@ -12,6 +12,8 @@
 #include "GAS_AttributeSet.h"
 #include "GAS_GameplayAbility.h"
 #include "Arkde_MultiplayerGAS/Arkde_MultiplayerGAS.h"
+#include "GAS_PlayerState.h"
+#include "GAS_GameplayEffect.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -49,11 +51,9 @@ AArkde_MultiplayerGASCharacter::AArkde_MultiplayerGASCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->SetIsReplicated(true);
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
-
-	AttributeSet = CreateDefaultSubobject<UGAS_AttributeSet>(TEXT("AttributeSet"));
+	bIsInputBound = false;
+	bAbilitiesGiven = false;
+	bEffectsGiven = false;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,28 +61,6 @@ AArkde_MultiplayerGASCharacter::AArkde_MultiplayerGASCharacter()
 void AArkde_MultiplayerGASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GetLocalRole() == ENetRole::ROLE_Authority && IsValid(AbilitySystemComponent))
-	{
-		for (TSubclassOf<UGAS_GameplayAbility>& CurrentAbilityClass : StartingAbilities)
-		{
-			if (!IsValid(CurrentAbilityClass))
-			{
-				continue;
-			}
-
-			UGAS_GameplayAbility* CurrentAbility = CurrentAbilityClass->GetDefaultObject<UGAS_GameplayAbility>();
-			if (!IsValid(CurrentAbility))
-			{
-				continue;
-			}
-
-			FGameplayAbilitySpec abilitySpec(CurrentAbility, 1, static_cast<int32>(CurrentAbility->AbilityInputID), this);
-			AbilitySystemComponent->GiveAbility(abilitySpec);
-		}
-
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -91,9 +69,15 @@ void AArkde_MultiplayerGASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (IsValid(AbilitySystemComponent))
+	AGAS_PlayerState* PlayerState = GetPlayerState<AGAS_PlayerState>();
+	if (IsValid(PlayerState))
 	{
-		AbilitySystemComponent->RefreshAbilityActorInfo();
+		AbilitySystemComponent = PlayerState->GetAbilitySystemComponent();
+		PlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(PlayerState, this);
+		AttributeSet = PlayerState->GetAttributeSet();
+
+		SetupAbilities();
+		SetupEffects();
 	}
 }
 
@@ -103,6 +87,9 @@ void AArkde_MultiplayerGASCharacter::SetupPlayerInputComponent(class UInputCompo
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
@@ -117,24 +104,8 @@ void AArkde_MultiplayerGASCharacter::SetupPlayerInputComponent(class UInputCompo
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AArkde_MultiplayerGASCharacter::LookUpAtRate);
 
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &AArkde_MultiplayerGASCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &AArkde_MultiplayerGASCharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AArkde_MultiplayerGASCharacter::OnResetVR);
-
 	// Setup Ability System Component Input Bindings
-	AbilitySystemComponent->BindAbilityActivationToInputComponent(
-		PlayerInputComponent,
-		FGameplayAbilityInputBinds(
-			"Confirm",
-			"Cancel",
-			"EGAS_AbilityInputID",
-			static_cast<int32>(EGAS_AbilityInputID::InputID_Confirm),
-			static_cast<int32>(EGAS_AbilityInputID::InputID_Cancel)
-		)
-	);
+	SetupGASInputs();
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -142,6 +113,109 @@ void AArkde_MultiplayerGASCharacter::SetupPlayerInputComponent(class UInputCompo
 UAbilitySystemComponent* AArkde_MultiplayerGASCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::SetupGASInputs()
+{
+	if (!bIsInputBound && IsValid(AbilitySystemComponent) && IsValid(InputComponent))
+	{
+		AbilitySystemComponent->BindAbilityActivationToInputComponent(
+			InputComponent,
+			FGameplayAbilityInputBinds(
+				"Confirm",
+				"Cancel",
+				"EGAS_AbilityInputID",
+				static_cast<int32>(EGAS_AbilityInputID::InputID_Confirm),
+				static_cast<int32>(EGAS_AbilityInputID::InputID_Cancel)
+			)
+		);
+
+		bIsInputBound = true;
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::SetupAbilities()
+{
+	if (GetLocalRole() != ROLE_Authority || !IsValid(AbilitySystemComponent) || bAbilitiesGiven)
+	{
+		return;
+	}
+
+	for (TSubclassOf<UGAS_GameplayAbility>& CurrentAbilityClass : StartingAbilities)
+	{
+		if (!IsValid(CurrentAbilityClass))
+		{
+			continue;
+		}
+
+		UGAS_GameplayAbility* CurrentAbility = CurrentAbilityClass->GetDefaultObject<UGAS_GameplayAbility>();
+		if (!IsValid(CurrentAbility))
+		{
+			continue;
+		}
+
+		FGameplayAbilitySpec abilitySpec(CurrentAbility, 1, static_cast<int32>(CurrentAbility->AbilityInputID), this);
+		AbilitySystemComponent->GiveAbility(abilitySpec);
+	}
+
+	bAbilitiesGiven = true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::SetupEffects()
+{
+	if (GetLocalRole() != ROLE_Authority || !IsValid(AbilitySystemComponent) || bEffectsGiven)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+
+	for (TSubclassOf<UGAS_GameplayEffect>& CurrentEffectClass : StartingEffects)
+	{
+		if (!IsValid(CurrentEffectClass))
+		{
+			continue;
+		}
+
+		FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(CurrentEffectClass, 1.0f, EffectContext);
+		if (NewHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
+		}
+	}
+
+	bEffectsGiven = true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::Die()
+{
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	AGAS_PlayerState* PlayerState = GetPlayerState<AGAS_PlayerState>();
+	if (IsValid(PlayerState))
+	{
+		AbilitySystemComponent = PlayerState->GetAbilitySystemComponent();
+		PlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(PlayerState, this);
+		AttributeSet = PlayerState->GetAttributeSet();
+
+		SetupGASInputs();
+	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
