@@ -26,7 +26,7 @@ public:
 
 	UGAS_AttributeSet();
 
-protected:
+public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;

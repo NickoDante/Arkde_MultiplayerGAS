@@ -99,5 +99,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	/* --- Gameplay Ability System End --- */
+
+	void Die();
 };
 
