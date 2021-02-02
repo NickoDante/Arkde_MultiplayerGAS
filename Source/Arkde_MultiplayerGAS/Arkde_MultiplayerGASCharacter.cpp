@@ -59,7 +59,7 @@ void AArkde_MultiplayerGASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (IsValid(AbilitySystemComponent))
+	if (GetLocalRole() == ENetRole::ROLE_Authority && IsValid(AbilitySystemComponent))
 	{
 		for (TSubclassOf<UGAS_GameplayAbility>& CurrentAbilityClass : StartingAbilities)
 		{
