@@ -69,12 +69,12 @@ void AArkde_MultiplayerGASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	AGAS_PlayerState* PlayerState = GetPlayerState<AGAS_PlayerState>();
-	if (IsValid(PlayerState))
+	AGAS_PlayerState* MyPlayerState = GetPlayerState<AGAS_PlayerState>();
+	if (IsValid(MyPlayerState))
 	{
-		AbilitySystemComponent = PlayerState->GetAbilitySystemComponent();
-		PlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(PlayerState, this);
-		AttributeSet = PlayerState->GetAttributeSet();
+		AbilitySystemComponent = MyPlayerState->GetAbilitySystemComponent();
+		MyPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(MyPlayerState, this);
+		AttributeSet = MyPlayerState->GetAttributeSet();
 
 		SetupAbilities();
 		SetupEffects();
@@ -207,12 +207,12 @@ void AArkde_MultiplayerGASCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
-	AGAS_PlayerState* PlayerState = GetPlayerState<AGAS_PlayerState>();
-	if (IsValid(PlayerState))
+	AGAS_PlayerState* MyPlayerState = GetPlayerState<AGAS_PlayerState>();
+	if (IsValid(MyPlayerState))
 	{
-		AbilitySystemComponent = PlayerState->GetAbilitySystemComponent();
-		PlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(PlayerState, this);
-		AttributeSet = PlayerState->GetAttributeSet();
+		AbilitySystemComponent = MyPlayerState->GetAbilitySystemComponent();
+		MyPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(MyPlayerState, this);
+		AttributeSet = MyPlayerState->GetAttributeSet();
 
 		SetupGASInputs();
 	}

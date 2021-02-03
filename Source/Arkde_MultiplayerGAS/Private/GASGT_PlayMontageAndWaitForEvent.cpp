@@ -1,89 +1,81 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "GAS_PlayerState.h"
-#include "AbilitySystemComponent.h"
-#include "GAS_AttributeSet.h"
-#include "Arkde_MultiplayerGAS/Arkde_MultiplayerGASCharacter.h"
+#include "GASGT_PlayMontageAndWaitForEvent.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-AGAS_PlayerState::AGAS_PlayerState()
+UGASGT_PlayMontageAndWaitForEvent::UGASGT_PlayMontageAndWaitForEvent(const FObjectInitializer& ObjectInitializer)
 {
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->SetIsReplicated(true);
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
 
-	AttributeSet = CreateDefaultSubobject<UGAS_AttributeSet>(TEXT("AttributeSet"));
-
-	NetUpdateFrequency = 100.0f;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-UAbilitySystemComponent* AGAS_PlayerState::GetAbilitySystemComponent() const
+void UGASGT_PlayMontageAndWaitForEvent::Activate()
 {
-	return AbilitySystemComponent;
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-UGAS_AttributeSet* AGAS_PlayerState::GetAttributeSet() const
+void UGASGT_PlayMontageAndWaitForEvent::ExternalCancel()
 {
-	return AttributeSet;
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-bool AGAS_PlayerState::IsAlive() const
+FString UGASGT_PlayMontageAndWaitForEvent::GetDebugString() const
 {
-	return GetHealth() > 0.0f;
+	return FString();
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-float AGAS_PlayerState::GetHealth() const
+void UGASGT_PlayMontageAndWaitForEvent::OnDestroy(bool bInOwnerFinished)
 {
-	return GetAttributeSet()->GetHealth();
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-float AGAS_PlayerState::GetMaxHealth() const
+UGASGT_PlayMontageAndWaitForEvent* UGASGT_PlayMontageAndWaitForEvent::PlayMontageAndWaitForEvent(UGameplayAbility* OwningAbility, FName TaskInstanceName, UAnimMontage* MontageToPlay, FGameplayTagContainer EventTags, float Rate /*= 1.0f*/, FName StartSection /*= NAME_None*/, bool bStopWhenAbilityEnds /*= true*/, float AnimRootMotionTranslationScale /*= 1.0f*/)
 {
-	return GetAttributeSet()->GetMaxHealth();
+	return nullptr;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-float AGAS_PlayerState::GetHealthRegen() const
+bool UGASGT_PlayMontageAndWaitForEvent::StopPlayingMontage()
 {
-	return GetAttributeSet()->GetHealthRegen();
+	return true;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void AGAS_PlayerState::BeginPlay()
+void UGASGT_PlayMontageAndWaitForEvent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
 {
-	Super::BeginPlay();
 
-	if (IsValid(AbilitySystemComponent))
-	{
-		// Callback Attribute Change / Delegate for Attributes
-		HealthChangeDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(GetAttributeSet()->GetHealthAttribute()).AddUObject(this, &AGAS_PlayerState::OnHealthChanged);
-	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void AGAS_PlayerState::OnHealthChanged(const FOnAttributeChangeData& Data)
+void UGASGT_PlayMontageAndWaitForEvent::OnAbilityCancelled()
 {
-	if (!IsAlive() && IsValid(AbilitySystemComponent))
-	{
-		AArkde_MultiplayerGASCharacter* CharacterReference = Cast<AArkde_MultiplayerGASCharacter>(GetPawn());
-		if (IsValid(CharacterReference))
-		{
-			CharacterReference->Die();
-		}
-	}
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UGASGT_PlayMontageAndWaitForEvent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UGASGT_PlayMontageAndWaitForEvent::OnGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
+{
+
 }
