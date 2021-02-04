@@ -196,9 +196,31 @@ void AArkde_MultiplayerGASCharacter::SetupEffects()
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void AArkde_MultiplayerGASCharacter::Die()
+void AArkde_MultiplayerGASCharacter::Server_Die_Implementation(AArkde_MultiplayerGASCharacter* Killer)
 {
+	if (bIsDying)
+	{
+		return;
+	}
 
+	bIsDying = true;
+
+	AGAS_PlayerState* KillerPlayerState = Cast<AGAS_PlayerState>(Killer->GetPlayerState());
+	if (IsValid(KillerPlayerState))
+	{
+		KillerPlayerState->ScoreKill();
+	}
+
+	// Recordar al GameMode que hemos muerto
+
+	// Realizar acciones al morir
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bool AArkde_MultiplayerGASCharacter::Server_Die_Validate(AArkde_MultiplayerGASCharacter* Killer)
+{
+	return true;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

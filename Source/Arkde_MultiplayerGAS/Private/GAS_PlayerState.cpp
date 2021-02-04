@@ -5,6 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "GAS_AttributeSet.h"
 #include "Arkde_MultiplayerGAS/Arkde_MultiplayerGASCharacter.h"
+#include "GameplayAbilities/Public/GameplayEffectTypes.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -17,6 +18,7 @@ AGAS_PlayerState::AGAS_PlayerState()
 	AttributeSet = CreateDefaultSubobject<UGAS_AttributeSet>(TEXT("AttributeSet"));
 
 	NetUpdateFrequency = 100.0f;
+	KillCount = 0;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -83,7 +85,22 @@ void AGAS_PlayerState::OnHealthChanged(const FOnAttributeChangeData& Data)
 		AArkde_MultiplayerGASCharacter* CharacterReference = Cast<AArkde_MultiplayerGASCharacter>(GetPawn());
 		if (IsValid(CharacterReference))
 		{
-			CharacterReference->Die();
+			AActor* KillerActor = nullptr; //Data.GEModData->EffectSpec.GetEffectContext().GetEffectCauser();
+			if (IsValid(KillerActor))
+			{
+				AArkde_MultiplayerGASCharacter* KillerCharacter = Cast<AArkde_MultiplayerGASCharacter>(KillerActor);
+				if (IsValid(KillerCharacter))
+				{
+					CharacterReference->Server_Die(KillerCharacter);
+				}
+			}
 		}
 	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AGAS_PlayerState::ScoreKill()
+{
+	KillCount++;
 }

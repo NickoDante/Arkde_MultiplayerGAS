@@ -13,6 +13,8 @@ class AArkde_MultiplayerGASGameMode : public AGameModeBase
 
 public:
 	AArkde_MultiplayerGASGameMode();
+
+	void PlayerKilled(AController* VictimController);
 };
 
 

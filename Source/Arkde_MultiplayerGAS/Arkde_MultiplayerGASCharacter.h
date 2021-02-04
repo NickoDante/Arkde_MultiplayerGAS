@@ -86,6 +86,8 @@ public:
 
 	bool bEffectsGiven;
 
+	bool bIsDying;
+
 	/* --- Gameplay Ability System Start --- */
 
 protected:
@@ -117,7 +119,8 @@ public:
 
 	void SetupEffects();
 
-	virtual void Die();
+	UFUNCTION(Server, WithValidation, Reliable)
+	virtual void Server_Die(AArkde_MultiplayerGASCharacter* Killer);
 
 	virtual void OnRep_PlayerState() override;
 

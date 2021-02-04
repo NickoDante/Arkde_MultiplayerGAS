@@ -55,4 +55,13 @@ public:
 	FDelegateHandle HealthChangeDelegateHandle;
 	
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
+
+	/* --- Win Condition Start --- */
+
+	int KillCount;
+
+	void ScoreKill();
+
+	/* --- Win Condition End --- */
+
 };
