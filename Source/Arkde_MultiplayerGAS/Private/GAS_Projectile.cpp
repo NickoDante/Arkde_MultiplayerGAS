@@ -45,7 +45,7 @@ void AGAS_Projectile::Tick(float DeltaTime)
 
 void AGAS_Projectile::Multicast_IgnoreActor_Implementation(AActor* ActorToIgnore)
 {
-	SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, false);
+	SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, true);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
