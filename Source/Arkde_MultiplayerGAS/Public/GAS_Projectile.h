@@ -9,6 +9,7 @@
 class UProjectileMovementComponent;
 class USphereComponent;
 class UparticleSystemComponent;
+class AArkde_MultiplayerGASCharacter;
 
 UCLASS()
 class ARKDE_MULTIPLAYERGAS_API AGAS_Projectile : public AActor
@@ -25,6 +26,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UParticleSystemComponent* ParticleSystemComponent;
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Range;
 	
 public:	
 
@@ -41,4 +47,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(NetMulticast, WithValidation, Reliable)
+	void Multicast_IgnoreActor(AActor* ActorToIgnore);
 };

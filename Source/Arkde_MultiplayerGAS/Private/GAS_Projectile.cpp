@@ -6,6 +6,8 @@
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 // Sets default values
 AGAS_Projectile::AGAS_Projectile()
 {
@@ -21,12 +23,16 @@ AGAS_Projectile::AGAS_Projectile()
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 // Called when the game starts or when spawned
 void AGAS_Projectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Called every frame
 void AGAS_Projectile::Tick(float DeltaTime)
@@ -35,3 +41,16 @@ void AGAS_Projectile::Tick(float DeltaTime)
 
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AGAS_Projectile::Multicast_IgnoreActor_Implementation(AActor* ActorToIgnore)
+{
+	SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, false);
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bool AGAS_Projectile::Multicast_IgnoreActor_Validate(AActor* ActorToIgnore)
+{
+	return true;
+}

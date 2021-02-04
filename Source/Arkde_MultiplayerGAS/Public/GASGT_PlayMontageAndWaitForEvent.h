@@ -24,7 +24,7 @@ public:
 
 	UGASGT_PlayMontageAndWaitForEvent(const FObjectInitializer& ObjectInitializer);
 
-protected:
+public:
 
 	UPROPERTY(BlueprintAssignable)
 	FPlayMontageAndWaitForEventSignature OnCompleteDelegate;

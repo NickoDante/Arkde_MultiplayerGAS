@@ -2,8 +2,9 @@
 
 
 #include "GASGT_PlayMontageAndWaitForEvent.h"
+#include "AbilitySystemComponent.h"
 #include "GameFramework/Character.h"
-#include "GameplayAbilities/Public/AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -108,47 +109,146 @@ FString UGASGT_PlayMontageAndWaitForEvent::GetDebugString() const
 
 void UGASGT_PlayMontageAndWaitForEvent::OnDestroy(bool bInOwnerFinished)
 {
+	if (Ability)
+	{
+		Ability->OnGameplayAbilityCancelled.Remove(CancelledHandle);
+		if (bInOwnerFinished && bStopWhenAbilityEnds)
+		{
+			StopPlayingMontage();
+		}
+	}
 
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RemoveGameplayEventTagContainerDelegate(EventTags, EventHandle);
+	}
+
+	Super::OnDestroy(bInOwnerFinished);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 UGASGT_PlayMontageAndWaitForEvent* UGASGT_PlayMontageAndWaitForEvent::PlayMontageAndWaitForEvent(UGameplayAbility* OwningAbility, FName TaskInstanceName, UAnimMontage* MontageToPlay, FGameplayTagContainer EventTags, float Rate /*= 1.0f*/, FName StartSection /*= NAME_None*/, bool bStopWhenAbilityEnds /*= true*/, float AnimRootMotionTranslationScale /*= 1.0f*/)
 {
-	return nullptr;
+	UAbilitySystemGlobals::NonShipping_ApplyGlobalAbilityScaler_Rate(Rate);
+
+	UGASGT_PlayMontageAndWaitForEvent* MyObj = NewAbilityTask<UGASGT_PlayMontageAndWaitForEvent>(OwningAbility, TaskInstanceName);
+	MyObj->MontageToPlay = MontageToPlay;
+	MyObj->EventTags = EventTags;
+	MyObj->Rate = Rate;
+	MyObj->StartSection = StartSection;
+	MyObj->AnimRootMotionTranslationScale = AnimRootMotionTranslationScale;
+	MyObj->bStopWhenAbilityEnds = bStopWhenAbilityEnds;
+
+	return MyObj;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 bool UGASGT_PlayMontageAndWaitForEvent::StopPlayingMontage()
 {
-	return true;
+	const FGameplayAbilityActorInfo* ActorInfo = Ability->GetCurrentActorInfo();
+	if (!ActorInfo)
+	{
+		return false;
+	}
+
+	UAnimInstance* AnimInstance = ActorInfo->GetAnimInstance();
+	if (AnimInstance == nullptr)
+	{
+		return false;
+	}
+
+	if (AbilitySystemComponent && Ability)
+	{
+		if (AbilitySystemComponent->GetAnimatingAbility() == Ability && AbilitySystemComponent->GetCurrentMontage() == MontageToPlay)
+		{
+			FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(MontageToPlay);
+			if (MontageInstance)
+			{
+				MontageInstance->OnMontageBlendingOutStarted.Unbind();
+				MontageInstance->OnMontageEnded.Unbind();
+			}
+
+			AbilitySystemComponent->CurrentMontageStop();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void UGASGT_PlayMontageAndWaitForEvent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (Ability && Ability->GetCurrentMontage() == MontageToPlay)
+	{
+		if (Montage == MontageToPlay)
+		{
+			AbilitySystemComponent->ClearAnimatingAbility(Ability);
+			ACharacter* Character = Cast<ACharacter>(GetAvatarActor());
+			if (IsValid(Character) && (Character->GetLocalRole() == ROLE_Authority ||
+				(Character->GetLocalRole() == ROLE_AutonomousProxy && Ability->GetNetExecutionPolicy() == EGameplayAbilityNetExecutionPolicy::LocalPredicted)))
+			{
+				Character->SetAnimRootMotionTranslationScale(1.0f);
+			}
+		}
+	}
 
+	if (bInterrupted)
+	{
+		if (ShouldBroadcastAbilityTaskDelegates())
+		{
+			OnInterrumptedDelegate.Broadcast(FGameplayTag(), FGameplayEventData());
+		}
+	}
+	else
+	{
+		if (ShouldBroadcastAbilityTaskDelegates())
+		{
+			OnBlendOutDelegate.Broadcast(FGameplayTag(), FGameplayEventData());
+		}
+	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void UGASGT_PlayMontageAndWaitForEvent::OnAbilityCancelled()
 {
-
+	if (StopPlayingMontage())
+	{
+		if (ShouldBroadcastAbilityTaskDelegates())
+		{
+			OnCancelledDelegate.Broadcast(FGameplayTag(), FGameplayEventData());
+		}
+	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void UGASGT_PlayMontageAndWaitForEvent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (!bInterrupted)
+	{
+		if (ShouldBroadcastAbilityTaskDelegates())
+		{
+			OnCompleteDelegate.Broadcast(FGameplayTag(), FGameplayEventData());
+		}
+	}
 
+	EndTask();
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void UGASGT_PlayMontageAndWaitForEvent::OnGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
 {
+	if (ShouldBroadcastAbilityTaskDelegates())
+	{
+		FGameplayEventData tempData = *Payload;
+		tempData.EventTag = EventTag;
 
+		OnEventReceivedDelegate.Broadcast(EventTag, tempData);
+	}
 }

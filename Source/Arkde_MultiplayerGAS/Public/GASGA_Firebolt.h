@@ -34,6 +34,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float ProjectileRange;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName AbilitySocketName;
+
 public:
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
