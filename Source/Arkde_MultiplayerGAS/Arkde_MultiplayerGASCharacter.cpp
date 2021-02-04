@@ -14,6 +14,7 @@
 #include "Arkde_MultiplayerGAS/Arkde_MultiplayerGAS.h"
 #include "GAS_PlayerState.h"
 #include "GAS_GameplayEffect.h"
+#include "Arkde_MultiplayerGAS/Arkde_MultiplayerGASGameMode.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -205,6 +206,12 @@ void AArkde_MultiplayerGASCharacter::Server_Die_Implementation(AArkde_Multiplaye
 
 	bIsDying = true;
 
+	if (IsValid(DeadEffectClass))
+	{
+		FGameplayEffectContextHandle EffectContext;
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(DeadEffectClass->GetDefaultObject<UGameplayEffect>(), 1.0f, EffectContext);
+	}
+
 	AGAS_PlayerState* KillerPlayerState = Cast<AGAS_PlayerState>(Killer->GetPlayerState());
 	if (IsValid(KillerPlayerState))
 	{
@@ -212,13 +219,40 @@ void AArkde_MultiplayerGASCharacter::Server_Die_Implementation(AArkde_Multiplaye
 	}
 
 	// Recordar al GameMode que hemos muerto
+	AArkde_MultiplayerGASGameMode* GameMode = Cast<AArkde_MultiplayerGASGameMode>(GetWorld()->GetAuthGameMode());
+	if (IsValid(GameMode))
+	{
+		GameMode->PlayerKilled(GetController());
+	}
 
 	// Realizar acciones al morir
+	Multicast_OnDeath();
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 bool AArkde_MultiplayerGASCharacter::Server_Die_Validate(AArkde_MultiplayerGASCharacter* Killer)
+{
+	return true;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AArkde_MultiplayerGASCharacter::Multicast_OnDeath_Implementation()
+{
+	if (IsValid(DeadMontage))
+	{
+		PlayAnimMontage(DeadMontage);
+	}
+	else
+	{
+		Destroy();
+	}
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bool AArkde_MultiplayerGASCharacter::Multicast_OnDeath_Validate()
 {
 	return true;
 }

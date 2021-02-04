@@ -11,6 +11,8 @@ class UAbilitySystemComponent;
 class UGAS_AttributeSet;
 class UGAS_GameplayAbility;
 class UGAS_GameplayEffect;
+class UGameplayEffect;
+class UAnimMontage;
 
 UCLASS(config=Game)
 class AArkde_MultiplayerGASCharacter : public ACharacter, public IAbilitySystemInterface
@@ -106,6 +108,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Ability System")
 	TArray<TSubclassOf<UGAS_GameplayEffect>> StartingEffects;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> DeadEffectClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* DeadMontage;
+
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Ability System")
@@ -121,6 +129,10 @@ public:
 
 	UFUNCTION(Server, WithValidation, Reliable)
 	virtual void Server_Die(AArkde_MultiplayerGASCharacter* Killer);
+
+	UFUNCTION(NetMulticast, WithValidation, Reliable)
+	void Multicast_OnDeath();
+
 
 	virtual void OnRep_PlayerState() override;
 

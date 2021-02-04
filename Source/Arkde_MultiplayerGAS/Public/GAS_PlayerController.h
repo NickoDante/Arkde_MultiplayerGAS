@@ -16,7 +16,14 @@ class ARKDE_MULTIPLAYERGAS_API AGAS_PlayerController : public APlayerController
 	
 public:
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> SpectatingViewpointClass;
+
+public:
+
 	void GameConclussion(bool bWasSuccesful);
+
+	virtual void OnPossess(APawn* aPawn) override;
 
 protected:
 

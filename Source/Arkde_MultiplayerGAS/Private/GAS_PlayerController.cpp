@@ -2,6 +2,7 @@
 
 
 #include "GAS_PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -9,5 +10,17 @@ void AGAS_PlayerController::GameConclussion(bool bWasSuccesful)
 {
 	BP_GameConclussion(bWasSuccesful);
 
-	SetViewTargetWithBlend(nullptr, 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+	TArray<AActor*> ViewpointActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SpectatingViewpointClass, ViewpointActors);
+
+	SetViewTargetWithBlend(ViewpointActors[0], 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+}
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void AGAS_PlayerController::OnPossess(APawn* aPawn)
+{
+	Super::OnPossess(aPawn);
+
+	SetViewTarget(aPawn);
 }

@@ -27,4 +27,8 @@ void AArkde_MultiplayerGASGameMode::PlayerKilled(AController* VictimController)
 	}
 
 	AGAS_GameState* WorldGameState = GetWorld()->GetGameState<AGAS_GameState>();
+	if (IsValid(WorldGameState))
+	{
+		WorldGameState->CheckWinCondition();
+	}
 }

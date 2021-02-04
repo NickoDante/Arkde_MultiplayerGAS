@@ -5,7 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "GAS_AttributeSet.h"
 #include "Arkde_MultiplayerGAS/Arkde_MultiplayerGASCharacter.h"
-#include "GameplayAbilities/Public/GameplayEffectTypes.h"
+#include "GameplayEffectExtension.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ void AGAS_PlayerState::OnHealthChanged(const FOnAttributeChangeData& Data)
 		AArkde_MultiplayerGASCharacter* CharacterReference = Cast<AArkde_MultiplayerGASCharacter>(GetPawn());
 		if (IsValid(CharacterReference))
 		{
-			AActor* KillerActor = nullptr; //Data.GEModData->EffectSpec.GetEffectContext().GetEffectCauser();
+			AActor* KillerActor = Data.GEModData->EffectSpec.GetEffectContext().GetEffectCauser();
 			if (IsValid(KillerActor))
 			{
 				AArkde_MultiplayerGASCharacter* KillerCharacter = Cast<AArkde_MultiplayerGASCharacter>(KillerActor);
