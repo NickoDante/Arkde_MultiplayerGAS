@@ -80,7 +80,7 @@ void AGAS_PlayerState::BeginPlay()
 
 void AGAS_PlayerState::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
-	if (!IsAlive() && IsValid(AbilitySystemComponent))
+	if (!IsAlive() && IsValid(AbilitySystemComponent) && GetLocalRole() == ROLE_Authority)
 	{
 		AArkde_MultiplayerGASCharacter* CharacterReference = Cast<AArkde_MultiplayerGASCharacter>(GetPawn());
 		if (IsValid(CharacterReference))
